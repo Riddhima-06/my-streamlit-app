@@ -2,6 +2,7 @@ import streamlit as st
 import joblib
 from extract_features import extract_features  # your feature extraction function
 from pydub import AudioSegment
+import pydub
 import io
 
 st.title("Music Genre Classifier 🎵")
@@ -9,6 +10,9 @@ st.title("Music Genre Classifier 🎵")
 # Load trained model and label encoder
 model = joblib.load("model.joblib")
 le = joblib.load("label_encoder.joblib")
+
+# Tell pydub where ffmpeg.exe is (replace with your path)
+pydub.AudioSegment.converter = r"C:\ffmpeg\bin\ffmpeg.exe"
 
 # Upload audio file
 audio_file = st.file_uploader("Upload a WAV or MP3 file", type=["wav", "mp3"])
@@ -27,21 +31,25 @@ if audio_file is not None:
     # Display audio player
     st.audio(audio_data, format="audio/wav")
 
-    # Extract features
-    features = extract_features(audio_data)  # ensure your function can handle file-like object
+    # Extract features (make sure your function can handle file-like object or path)
+    features = extract_features(audio_data)  # should return shape (1, n_features)
 
     # Make prediction
     prediction = model.predict(features)
 
-    # Convert numeric label back to genre name
+    # Convert numeric label to genre name
     predicted_genre_name = le.inverse_transform(prediction)
 
-    # Display predicted genre
+    # Display result
     st.success(f"Predicted Genre: {predicted_genre_name[0]}")
 
     # Optional: show extracted features
     st.subheader("Extracted Features")
     st.write(features)
+
+
+
+
 
 
 
