@@ -1,34 +1,24 @@
 import streamlit as st
-import joblib
-from feature_extraction import extract_features
 import numpy as np
+import pandas as pd
+from extract_features import extract_features
 
-# Load model
-clf = joblib.load("genre_classifier.joblib")
+st.title("🎵 Music Genre Feature Extractor")
 
-# Streamlit UI
-st.title("🎵 Music Genre Classifier")
-st.write("Upload an audio file and let the model predict its genre.")
-
-uploaded_file = st.file_uploader("Choose an audio file", type=["wav", "au", "mp3"])
+# File uploader
+uploaded_file = st.file_uploader("Upload an audio file (.wav or .mp3)", type=["wav", "mp3"])
 
 if uploaded_file is not None:
-    with open("temp_audio", "wb") as f:
-        f.write(uploaded_file.read())
-    
-    try:
-        # Extract features
-        feats = extract_features("temp_audio")
-        # Predict
-        probs = clf.predict_proba([feats])[0]
-        pred = clf.classes_[np.argmax(probs)]
-        
-        st.success(f"**Predicted Genre:** {pred}")
-        
-        st.write("### Probabilities:")
-        for genre, p in zip(clf.classes_, probs):
-            st.write(f"{genre}: {p:.2f}")
-    
-    except Exception as e:
-        st.error(f"Error processing file: {e}")
+    st.audio(uploaded_file, format="audio/wav")
+
+    # Extract features
+    features = extract_features(uploaded_file)
+    if features is not None:
+        df = pd.DataFrame([features])
+        st.write("✅ Extracted Features:")
+        st.dataframe(df)
+    else:
+        st.error("❌ Could not extract features from the file.")
+
+
 
