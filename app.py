@@ -1,40 +1,48 @@
 import streamlit as st
-import numpy as np
-import pandas as pd
 import joblib
-from extract_features import extract_features
+from extract_features import extract_features  # your feature extraction function
+from pydub import AudioSegment
+import io
 
-st.title("🎵 Music Genre Classifier")
+st.title("Music Genre Classifier 🎵")
 
-# Load your trained model
-@st.cache_resource
-def load_model():
-    return joblib.load("model.joblib")   # make sure this file is in your repo
+# Load trained model and label encoder
+model = joblib.load("model.joblib")
+le = joblib.load("label_encoder.joblib")
 
-model = load_model()
+# Upload audio file
+audio_file = st.file_uploader("Upload a WAV or MP3 file", type=["wav", "mp3"])
 
-# File uploader
-uploaded_file = st.file_uploader("Upload an audio file (.wav or .mp3)", type=["wav", "mp3"])
+if audio_file is not None:
+    # Convert MP3 to WAV if needed
+    if audio_file.type == "audio/mpeg":  # mp3
+        audio = AudioSegment.from_file(io.BytesIO(audio_file.read()), format="mp3")
+        wav_io = io.BytesIO()
+        audio.export(wav_io, format="wav")
+        wav_io.seek(0)
+        audio_data = wav_io
+    else:  # already WAV
+        audio_data = audio_file
 
-if uploaded_file is not None:
-    st.audio(uploaded_file, format="audio/wav")
+    # Display audio player
+    st.audio(audio_data, format="audio/wav")
 
     # Extract features
-    features = extract_features(uploaded_file)
-    if features is not None:
-        features = np.array(features).reshape(1, -1)
+    features = extract_features(audio_data)  # ensure your function can handle file-like object
 
-        # Predict genre
-        prediction = model.predict(features)[0]
+    # Make prediction
+    prediction = model.predict(features)
 
-        st.success(f"🎶 Predicted Genre: **{prediction}**")
+    # Convert numeric label back to genre name
+    predicted_genre_name = le.inverse_transform(prediction)
 
-        # Show extracted features for reference
-        df = pd.DataFrame([features[0]])
-        st.write("🔍 Extracted Features:")
-        st.dataframe(df)
-    else:
-        st.error("❌ Could not extract features from the file.")
+    # Display predicted genre
+    st.success(f"Predicted Genre: {predicted_genre_name[0]}")
+
+    # Optional: show extracted features
+    st.subheader("Extracted Features")
+    st.write(features)
+
 
 
 
