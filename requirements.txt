@@ -1,9 +1,11 @@
 streamlit
-joblib
 pandas
-scikit-learn
 numpy
+scikit-learn
+xgboost
 librosa
+joblib
+
 
 
 
