@@ -1,6 +1,6 @@
 import streamlit as st
 import joblib
-from src.feature_extraction import extract_features
+from feature_extraction import extract_features
 import numpy as np
 
 # Load model
@@ -31,3 +31,4 @@ if uploaded_file is not None:
     
     except Exception as e:
         st.error(f"Error processing file: {e}")
+
