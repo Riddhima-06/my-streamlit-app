@@ -4,16 +4,23 @@ import librosa
 import numpy as np
 import joblib
 
-# Import train.main
+# Import main functions
+from extract_features import main as features_main
 from train import main as train_main
 
-# Check if model exists, otherwise retrain
+# Step 1: Ensure features.csv exists
+if not os.path.exists("features.csv"):
+    st.warning("⚠️ features.csv not found. Extracting features, please wait...")
+    features_main()
+    st.success("✅ Features extracted!")
+
+# Step 2: Ensure model exists
 if not (os.path.exists("model.joblib") and os.path.exists("scaler.joblib")):
     st.warning("⚠️ No trained model found. Training now, please wait...")
     train_main()
     st.success("✅ Model trained successfully!")
 
-# Load model & scaler
+# Step 3: Load model & scaler
 model = joblib.load("model.joblib")
 scaler = joblib.load("scaler.joblib")
 
@@ -39,6 +46,7 @@ if uploaded_file is not None:
     prediction = model.predict(features_scaled)[0]  # ✅ Genre name
 
     st.success(f"🎶 Predicted Genre: **{prediction}**")
+
 
 
 
