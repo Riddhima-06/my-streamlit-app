@@ -3,41 +3,55 @@ import librosa
 import numpy as np
 import pandas as pd
 
+# Function to extract features from one audio file
 def extract_features(file_path):
     try:
-        y, sr = librosa.load(file_path, sr=None)
-        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
-        mfcc_scaled = np.mean(mfcc.T, axis=0)
-        return mfcc_scaled
+        y, sr = librosa.load(file_path, sr=None)  # load audio
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        mfcc_mean = np.mean(mfcc.T, axis=0)
+
+        chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+        chroma_mean = np.mean(chroma.T, axis=0)
+
+        mel = librosa.feature.melspectrogram(y=y, sr=sr)
+        mel_mean = np.mean(mel.T, axis=0)
+
+        # Combine features into a single vector
+        features = np.hstack([mfcc_mean, chroma_mean, mel_mean])
+        return features
     except Exception as e:
-        print(f"Error processing {file_path}: {e}")
+        print(f"❌ Error extracting {file_path}: {e}")
         return None
 
-def process_dataset(dataset_path):
-    features = []
+# Main function to extract from dataset
+def main():
+    dataset_path = "data/genres"   # your dataset folder
+    data = []
     labels = []
 
-    for genre in os.listdir(dataset_path):
-        genre_path = os.path.join(dataset_path, genre)
-        if not os.path.isdir(genre_path):
-            continue
+    for root, _, files in os.walk(dataset_path):
+        for file in files:
+            if file.endswith(".wav"):
+                file_path = os.path.join(root, file)
+                genre = os.path.basename(root)  # folder name = genre
+                features = extract_features(file_path)
 
-        for file_name in os.listdir(genre_path):
-            if file_name.endswith(".wav"):
-                file_path = os.path.join(genre_path, file_name)
-                mfcc_features = extract_features(file_path)
-                if mfcc_features is not None:
-                    features.append(mfcc_features)
-                    labels.append(genre)  # ✅ Save genre NAME, not number
+                if features is not None:
+                    data.append(features)
+                    labels.append(genre)
 
-    df = pd.DataFrame(features)
-    df['label'] = labels
-    return df
+    # Save to DataFrame
+    if data:
+        df = pd.DataFrame(data)
+        df["label"] = labels
+        df.to_csv("features.csv", index=False)
+        print("✅ Features extracted and saved to features.csv")
+    else:
+        print("⚠️ No features extracted. Check dataset path.")
 
 if __name__ == "__main__":
-    dataset_path = "data/genres"
-    df = process_dataset(dataset_path)
-    df.to_csv("features.csv", index=False)
-    print(f"✅ Features extracted for {len(df)} samples and saved to features.csv")
+    main()
+
+
 
 
