@@ -1,60 +1,54 @@
 import os
-import streamlit as st
-import librosa
-import numpy as np
 import joblib
-
-# Import main functions
+import streamlit as st
 from extract_features import main as features_main
 from train import main as train_main
 
 # Step 1: Ensure features.csv exists
 if not os.path.exists("features.csv"):
-    st.warning("⚠️ features.csv not found. Extracting features, please wait...")
+    st.warning("⚠️ No features dataset found. Extracting now...")
     features_main()
-    st.success("✅ Features extracted!")
+    st.success("✅ Features extracted and saved to features.csv!")
 
-# Step 2: Ensure model exists
-if not (os.path.exists("model.joblib") and os.path.exists("scaler.joblib")):
+# Step 2: Check if model & scaler exist, else train
+if not os.path.exists("model.joblib") or not os.path.exists("scaler.joblib"):
     st.warning("⚠️ No trained model found. Training now, please wait...")
     train_main()
-    st.success("✅ Model trained successfully!")
+    st.success("✅ Model trained and saved successfully!")
 
 # Step 3: Load model & scaler
 model = joblib.load("model.joblib")
 scaler = joblib.load("scaler.joblib")
 
+# 🎵 Define genre labels (adjust this order to match your dataset)
+GENRE_LABELS = [
+    "blues", "classical", "country", "disco", "hiphop", 
+    "jazz", "metal", "pop", "reggae", "rock"
+]
+
+# Example placeholder for your feature extraction
 def extract_features(file_path):
-    y, sr = librosa.load(file_path, sr=None)
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
-    mfcc_scaled = np.mean(mfcc.T, axis=0)
-    return mfcc_scaled.reshape(1, -1)
+    # Call your real feature extraction logic from extract_features.py
+    # It should return a numpy array of features
+    pass
 
-st.title("🎵 Music Genre Classifier (WAV only)")
+# Prediction function
+def predict(file_path):
+    features = extract_features(file_path)
+    scaled_features = scaler.transform([features])
+    prediction = model.predict(scaled_features)
+    predicted_genre = GENRE_LABELS[prediction[0]]  # Map numeric label → genre
+    return predicted_genre
 
-uploaded_file = st.file_uploader("Upload a .wav file", type=["wav"])
+# Streamlit UI
+st.title("🎵 Music Genre Classifier")
+
+uploaded_file = st.file_uploader("Upload a music file (.wav)", type=["wav"])
 
 if uploaded_file is not None:
-    st.audio(uploaded_file, format="audio/wav")
-
-    # Save temp file
     with open("temp.wav", "wb") as f:
-        f.write(uploaded_file.getbuffer())
-
-    features = extract_features("temp.wav")
-    features_scaled = scaler.transform(features)
-    prediction = model.predict(features_scaled)[0]  # ✅ Genre name
-
-    st.success(f"🎶 Predicted Genre: **{prediction}**")
-
-
-
-
-
-
-
-
-
-
+        f.write(uploaded_file.read())
+    prediction = predict("temp.wav")
+    st.success(f"🎶 Predicted Genre: **{prediction.capitalize()}**")
 
 
