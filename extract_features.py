@@ -8,7 +8,7 @@ OUTPUT_CSV = "features.csv"
 
 def extract_features(file_path):
     try:
-        y, sr = librosa.load(file_path, sr=None)
+    y, sr = librosa.load(file_path, sr=None, res_type="kaiser_fast")
         mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=20)
         mfcc_scaled = np.mean(mfcc.T, axis=0)
         return mfcc_scaled
@@ -40,6 +40,7 @@ if len(features) > 0:
     print(f"✅ Extracted {len(features)} samples and saved to {OUTPUT_CSV}")
 else:
     print("⚠️ No features extracted! Check dataset path or file types.")
+
 
 
 
