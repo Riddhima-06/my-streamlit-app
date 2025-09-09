@@ -1,7 +1,10 @@
 import os
+import librosa
 import numpy as np
 import pandas as pd
-import librosa
+
+DATASET_PATH = "data/genres/"
+OUTPUT_CSV = "features.csv"
 
 def extract_features(file_path):
     try:
@@ -13,33 +16,31 @@ def extract_features(file_path):
         print(f"❌ Error processing {file_path}: {e}")
         return None
 
-def process_dataset(dataset_path="data/genres"):
-    features = []
-    labels = []
+features = []
+labels = []
 
-    for genre in os.listdir(dataset_path):
-        genre_path = os.path.join(dataset_path, genre)
-        if not os.path.isdir(genre_path):
-            continue
-
-        for file_name in os.listdir(genre_path):
-            if file_name.endswith(".wav"):
-                file_path = os.path.join(genre_path, file_name)
-                mfcc_features = extract_features(file_path)
-                if mfcc_features is not None:
-                    features.append(mfcc_features)
+# Loop through each genre folder
+for genre in os.listdir(DATASET_PATH):
+    genre_path = os.path.join(DATASET_PATH, genre)
+    if os.path.isdir(genre_path):
+        print(f"🎵 Processing genre: {genre}")
+        for file in os.listdir(genre_path):
+            if file.endswith(".wav"):  # adjust if files are .au
+                file_path = os.path.join(genre_path, file)
+                mfcc_scaled = extract_features(file_path)
+                if mfcc_scaled is not None:
+                    features.append(mfcc_scaled)
                     labels.append(genre)
 
+# Save to CSV
+if len(features) > 0:
     df = pd.DataFrame(features)
-    df['label'] = labels
-    return df
+    df["label"] = labels
+    df.to_csv(OUTPUT_CSV, index=False)
+    print(f"✅ Extracted {len(features)} samples and saved to {OUTPUT_CSV}")
+else:
+    print("⚠️ No features extracted! Check dataset path or file types.")
 
-def main(dataset_path="data/genres", output_file="features.csv"):
-    df = process_dataset(dataset_path)
-    df.to_csv(output_file, index=False)
-    print(f"✅ Features extracted for {len(df)} samples and saved to {output_file}")
 
-if __name__ == "__main__":
-    main()
 
 
